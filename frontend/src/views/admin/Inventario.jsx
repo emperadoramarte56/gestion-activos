@@ -44,21 +44,22 @@ export default function Inventario() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-xl font-bold text-slate-800">Inventario</h1>
           <p className="text-sm text-slate-500 mt-0.5">Licencias y activos registrados</p>
         </div>
-        {/* BOTÓN AGREGAR — navega a pantalla separada para que el breadcrumb funcione */}
         <button
           onClick={() => navigate('/admin/inventario/nueva-licencia')}
-          className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer"
+          className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
         >
           + Agregar licencia
         </button>
       </div>
 
-      {/* Filtros dinámicos desde la DB */}
+      {/* Filtros */}
       <div className="flex gap-3 flex-wrap">
         <input
           value={search}
@@ -87,70 +88,121 @@ export default function Inventario() {
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-xs text-slate-400 uppercase bg-slate-50 border-b border-slate-100">
-              <th className="text-left px-5 py-3 font-medium">Nombre</th>
-              <th className="text-left px-5 py-3 font-medium">Tipo</th>
-              <th className="text-left px-5 py-3 font-medium">Stock</th>
-              <th className="px-5 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
-              <tr>
-                <td colSpan={4} className="px-5 py-8 text-center text-slate-400 text-sm">
-                  Cargando inventario...
-                </td>
+      {/* ── TABLA — visible en md en adelante ── */}
+      <div className="hidden md:block bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs text-slate-400 uppercase bg-slate-50 border-b border-slate-100">
+                <th className="text-left px-5 py-3 font-medium">Nombre</th>
+                <th className="text-left px-5 py-3 font-medium">Tipo</th>
+                <th className="text-left px-5 py-3 font-medium">Stock</th>
+                <th className="px-5 py-3" />
               </tr>
-            )}
-            {!loading && filtered.map(item => (
-              <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                <td className="px-5 py-3 font-medium text-slate-700">{item.nombre}</td>
-                <td className="px-5 py-3">
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                    {item.tipo}
-                  </span>
-                </td>
-                <td className="px-5 py-3">
-                  <span className={item.stock <= 2 ? 'text-rose-500 font-semibold' : 'text-slate-500'}>
-                    {item.stock}
-                    {item.stock <= 2 && (
-                      <span className="ml-1.5 text-xs bg-rose-50 text-rose-400 px-1.5 py-0.5 rounded font-normal">
-                        crítico
-                      </span>
-                    )}
-                  </span>
-                </td>
-                <td className="px-5 py-3">
-                  <div className="flex gap-3 justify-end">
-                    <button
-                      onClick={() => navigate(`/admin/inventario/editar-licencia/${item.id}`)}
-                      className="text-xs text-brand-500 hover:underline cursor-pointer"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item.id, item.nombre)}
-                      className="text-xs text-rose-400 hover:underline cursor-pointer"
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {!loading && filtered.length === 0 && !error && (
-              <tr>
-                <td colSpan={4} className="px-5 py-8 text-center text-slate-400 text-sm">
-                  Sin resultados
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loading && (
+                <tr>
+                  <td colSpan={4} className="px-5 py-8 text-center text-slate-400 text-sm">
+                    Cargando inventario...
+                  </td>
+                </tr>
+              )}
+              {!loading && filtered.map(item => (
+                <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                  <td className="px-5 py-3 font-medium text-slate-700">{item.nombre}</td>
+                  <td className="px-5 py-3">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                      {item.tipo}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3">
+                    <span className={item.stock <= 2 ? 'text-rose-500 font-semibold' : 'text-slate-500'}>
+                      {item.stock}
+                      {item.stock <= 2 && (
+                        <span className="ml-1.5 text-xs bg-rose-50 text-rose-400 px-1.5 py-0.5 rounded font-normal">
+                          crítico
+                        </span>
+                      )}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3">
+                    <div className="flex gap-3 justify-end">
+                      <button
+                        onClick={() => navigate(`/admin/inventario/editar-licencia/${item.id}`)}
+                        className="text-xs text-brand-500 hover:underline cursor-pointer"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item.id, item.nombre)}
+                        className="text-xs text-rose-400 hover:underline cursor-pointer"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {!loading && filtered.length === 0 && !error && (
+                <tr>
+                  <td colSpan={4} className="px-5 py-8 text-center text-slate-400 text-sm">
+                    Sin resultados
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* ── CARDS — visible solo en móvil ── */}
+      <div className="md:hidden space-y-3">
+        {loading && (
+          <p className="text-center text-slate-400 text-sm py-8">Cargando inventario...</p>
+        )}
+        {!loading && filtered.length === 0 && !error && (
+          <p className="text-center text-slate-400 text-sm py-8">Sin resultados</p>
+        )}
+        {!loading && filtered.map(item => (
+          <div key={item.id} className="bg-white border border-slate-200 rounded-xl px-4 py-3 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <span className="font-semibold text-slate-700 text-sm">{item.nombre}</span>
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap">
+                {item.tipo}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-400">
+                Stock:{' '}
+                <span className={item.stock <= 2 ? 'text-rose-500 font-semibold' : 'text-slate-600 font-medium'}>
+                  {item.stock}
+                  {item.stock <= 2 && (
+                    <span className="ml-1 text-xs bg-rose-50 text-rose-400 px-1.5 py-0.5 rounded font-normal">
+                      crítico
+                    </span>
+                  )}
+                </span>
+              </span>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => navigate(`/admin/inventario/editar-licencia/${item.id}`)}
+                  className="text-xs text-brand-500 hover:underline cursor-pointer"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => handleDelete(item.id, item.nombre)}
+                  className="text-xs text-rose-400 hover:underline cursor-pointer"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
     </div>
   );
 }
