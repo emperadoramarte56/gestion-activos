@@ -44,9 +44,11 @@ export const UserModel = {
     return rows;
     },
     // Dar de baja el rol del usuario (Simulación de desactivación / eliminación lógica)
-    deactivateUser: async (userId) => {
-        // Mantiene tu lógica de quitar rol y además le ponemos estado Baja en MySQL
-        const [result] = await db.execute('UPDATE usuarios SET rol_id = NULL, estado = "Baja" WHERE id = ?', [userId]);
-        return result.affectedRows > 0;
-    }
+    deactivateUser: async (userId, connection = db) => {
+    const [result] = await connection.execute(
+        'UPDATE usuarios SET rol_id = NULL, estado = "Baja" WHERE id = ?', 
+        [userId]
+    );
+    return result.affectedRows > 0;
+    },
 };

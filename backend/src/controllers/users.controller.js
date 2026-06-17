@@ -35,26 +35,31 @@ export const getUserAccess = async (req, res) => {
 
 export const offboardUser = async (req, res) => {
   const { id } = req.params;
+  const connection = await db.getConnection();
   try {
-    // 1. Guardar qué licencias tenía antes de la baja (auditoría)
+    await connection.beginTransaction();
+
     const activeAccess = await UserModel.findAssignments(id);
 
-    // 2. Desactivar la cuenta del usuario
-    const success = await UserModel.deactivateUser(id);
+    const success = await UserModel.deactivateUser(id, connection);
     if (!success) {
+      await connection.rollback();
       return res.status(404).json({ message: "Usuario no encontrado." });
     }
 
-    // 🆕 3. Vencer todas sus licencias activas y registrar fecha de vencimiento
-    const licenciasVencidas = await AssignmentModel.expireByUser(id);
+    const licenciasVencidas = await AssignmentModel.expireByUser(id, connection);
 
+    await connection.commit();
     res.json({
       message: "Offboarding completado. Sesión y licencias revocadas.",
       usuario_desactivado_id: id,
-      licencias_vencidas: licenciasVencidas,        // cuántas se vencieron
-      detalle_licencias: activeAccess               // cuáles eran
+      licencias_vencidas: licenciasVencidas,
+      detalle_licencias: activeAccess
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    await connection.rollback();
+    res.status(500).json({ message: "Error en offboarding", error: error.message });
+  } finally {
+    connection.release();
   }
 };
