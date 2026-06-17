@@ -2,6 +2,20 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiGetAssets, apiDeleteAsset } from '../../services/api';
 
+// Helper para formatear fechas
+const fmtFecha = (fecha) => {
+  if (!fecha) return null;
+  return new Date(fecha).toLocaleDateString('es-MX', {
+    day: '2-digit', month: 'short', year: 'numeric'
+  });
+};
+
+// Helper para detectar si ya venció
+const isVencida = (fecha) => {
+  if (!fecha) return false;
+  return new Date(fecha) < new Date();
+};
+
 export default function Inventario() {
   const navigate = useNavigate();
   const [assets,     setAssets]     = useState([]);
@@ -97,56 +111,78 @@ export default function Inventario() {
                 <th className="text-left px-5 py-3 font-medium">Nombre</th>
                 <th className="text-left px-5 py-3 font-medium">Tipo</th>
                 <th className="text-left px-5 py-3 font-medium">Stock</th>
+                <th className="text-left px-5 py-3 font-medium">Vencimiento</th>
                 <th className="px-5 py-3" />
               </tr>
             </thead>
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={4} className="px-5 py-8 text-center text-slate-400 text-sm">
+                  <td colSpan={5} className="px-5 py-8 text-center text-slate-400 text-sm">
                     Cargando inventario...
                   </td>
                 </tr>
               )}
-              {!loading && filtered.map(item => (
-                <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                  <td className="px-5 py-3 font-medium text-slate-700">{item.nombre}</td>
-                  <td className="px-5 py-3">
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                      {item.tipo}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3">
-                    <span className={item.stock <= 2 ? 'text-rose-500 font-semibold' : 'text-slate-500'}>
-                      {item.stock}
-                      {item.stock <= 2 && (
-                        <span className="ml-1.5 text-xs bg-rose-50 text-rose-400 px-1.5 py-0.5 rounded font-normal">
-                          crítico
+              {!loading && filtered.map(item => {
+                const vencida = isVencida(item.fecha_vencimiento);
+                return (
+                  <tr
+                    key={item.id}
+                    className={`border-b border-slate-50 hover:bg-slate-50 transition-colors ${vencida ? 'opacity-60' : ''}`}
+                  >
+                    <td className="px-5 py-3 font-medium text-slate-700">{item.nombre}</td>
+                    <td className="px-5 py-3">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                        {item.tipo}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className={item.stock <= 2 ? 'text-rose-500 font-semibold' : 'text-slate-500'}>
+                        {item.stock}
+                        {item.stock <= 2 && (
+                          <span className="ml-1.5 text-xs bg-rose-50 text-rose-400 px-1.5 py-0.5 rounded font-normal">
+                            crítico
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                    {/* 🆕 Columna vencimiento */}
+                    <td className="px-5 py-3">
+                      {item.fecha_vencimiento ? (
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                          vencida
+                            ? 'bg-rose-100 text-rose-400'
+                            : 'bg-emerald-100 text-emerald-600'
+                        }`}>
+                          {vencida ? '✕ ' : ''}
+                          {fmtFecha(item.fecha_vencimiento)}
                         </span>
+                      ) : (
+                        <span className="text-xs text-slate-300 italic">—</span>
                       )}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex gap-3 justify-end">
-                      <button
-                        onClick={() => navigate(`/admin/inventario/editar-licencia/${item.id}`)}
-                        className="text-xs text-brand-500 hover:underline cursor-pointer"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id, item.nombre)}
-                        className="text-xs text-rose-400 hover:underline cursor-pointer"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex gap-3 justify-end">
+                        <button
+                          onClick={() => navigate(`/admin/inventario/editar-licencia/${item.id}`)}
+                          className="text-xs text-brand-500 hover:underline cursor-pointer"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id, item.nombre)}
+                          className="text-xs text-rose-400 hover:underline cursor-pointer"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               {!loading && filtered.length === 0 && !error && (
                 <tr>
-                  <td colSpan={4} className="px-5 py-8 text-center text-slate-400 text-sm">
+                  <td colSpan={5} className="px-5 py-8 text-center text-slate-400 text-sm">
                     Sin resultados
                   </td>
                 </tr>
@@ -164,16 +200,23 @@ export default function Inventario() {
         {!loading && filtered.length === 0 && !error && (
           <p className="text-center text-slate-400 text-sm py-8">Sin resultados</p>
         )}
-        {!loading && filtered.map(item => (
-          <div key={item.id} className="bg-white border border-slate-200 rounded-xl px-4 py-3 space-y-2">
-            <div className="flex items-start justify-between gap-2">
-              <span className="font-semibold text-slate-700 text-sm">{item.nombre}</span>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap">
-                {item.tipo}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-400">
+        {!loading && filtered.map(item => {
+          const vencida = isVencida(item.fecha_vencimiento);
+          return (
+            <div
+              key={item.id}
+              className={`bg-white border border-slate-200 rounded-xl px-4 py-3 space-y-2 ${vencida ? 'opacity-60' : ''}`}
+            >
+              {/* Fila 1: nombre + tipo */}
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-semibold text-slate-700 text-sm">{item.nombre}</span>
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap">
+                  {item.tipo}
+                </span>
+              </div>
+
+              {/* Fila 2: stock */}
+              <p className="text-xs text-slate-400">
                 Stock:{' '}
                 <span className={item.stock <= 2 ? 'text-rose-500 font-semibold' : 'text-slate-600 font-medium'}>
                   {item.stock}
@@ -183,8 +226,22 @@ export default function Inventario() {
                     </span>
                   )}
                 </span>
-              </span>
-              <div className="flex gap-3">
+              </p>
+
+              {/* 🆕 Fila 3: vencimiento */}
+              <p className="text-xs text-slate-400">
+                Vence:{' '}
+                {item.fecha_vencimiento ? (
+                  <span className={`font-medium ${vencida ? 'text-rose-400' : 'text-emerald-600'}`}>
+                    {vencida ? '✕ ' : ''}{fmtFecha(item.fecha_vencimiento)}
+                  </span>
+                ) : (
+                  <span className="text-slate-300 italic">Sin fecha</span>
+                )}
+              </p>
+
+              {/* Fila 4: acciones */}
+              <div className="flex gap-3 justify-end pt-1">
                 <button
                   onClick={() => navigate(`/admin/inventario/editar-licencia/${item.id}`)}
                   className="text-xs text-brand-500 hover:underline cursor-pointer"
@@ -199,8 +256,8 @@ export default function Inventario() {
                 </button>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
     </div>

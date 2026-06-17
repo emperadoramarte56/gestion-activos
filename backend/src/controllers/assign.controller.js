@@ -4,20 +4,19 @@ import { AssignmentModel } from '../models/assignment.model.js';
 import { UserModel } from '../models/user.model.js';
 
 export const assignAssetToUser = async (req, res) => {
-  const { usuario_id, activo_id, clave_asignada } = req.body;
+  // 🆕 Se agrega fecha_vencimiento al destructuring
+  const { usuario_id, activo_id, clave_asignada, fecha_vencimiento = null } = req.body;
   const connection = await db.getConnection();
 
   try {
     await connection.beginTransaction();
 
-    // ── Validar que el usuario existe ──
     const user = await UserModel.findById(usuario_id, connection);
     if (!user) {
       await connection.rollback();
       return res.status(404).json({ message: "El usuario seleccionado no existe." });
     }
 
-    // ── Validar que el usuario no esté dado de baja ──
     if (user.estado && user.estado.toLowerCase().trim() === 'baja') {
       await connection.rollback();
       return res.status(400).json({
@@ -25,20 +24,17 @@ export const assignAssetToUser = async (req, res) => {
       });
     }
 
-    // ── Validar que el activo existe ──
     const asset = await AssetModel.findById(activo_id);
     if (!asset) {
       await connection.rollback();
       return res.status(404).json({ message: "El activo no existe." });
     }
 
-    // ── Validar stock disponible ──
     if (asset.stock <= 0) {
       await connection.rollback();
       return res.status(400).json({ message: "No queda stock disponible para este activo." });
     }
 
-    // 🆕 ── Validar que el usuario NO tenga ya esta licencia activa ──
     const duplicate = await AssignmentModel.findDuplicate(usuario_id, activo_id, connection);
     if (duplicate) {
       await connection.rollback();
@@ -47,8 +43,8 @@ export const assignAssetToUser = async (req, res) => {
       });
     }
 
-    // ── Crear asignación y descontar stock ──
-    await AssignmentModel.create(usuario_id, activo_id, clave_asignada, connection);
+    // 🆕 Se pasa fecha_vencimiento al model
+    await AssignmentModel.create(usuario_id, activo_id, clave_asignada, fecha_vencimiento, connection);
     await AssetModel.updateStock(activo_id, asset.stock - 1, connection);
 
     await connection.commit();

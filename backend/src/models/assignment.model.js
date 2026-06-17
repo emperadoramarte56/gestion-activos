@@ -2,16 +2,17 @@ import db from '../config/db.js';
 
 export const AssignmentModel = {
 
-  // Crear asignación — igual que antes
-  create: async (usuario_id, activo_id, clave_asignada, connection = db) => {
+  // Ahora acepta fecha_vencimiento opcional
+  create: async (usuario_id, activo_id, clave_asignada, fecha_vencimiento = null, connection = db) => {
     const [result] = await connection.execute(
-      'INSERT INTO asignaciones (usuario_id, activo_id, clave_asignada) VALUES (?, ?, ?)',
-      [usuario_id, activo_id, clave_asignada]
+      `INSERT INTO asignaciones (usuario_id, activo_id, clave_asignada, fecha_vencimiento) 
+       VALUES (?, ?, ?, ?)`,
+      [usuario_id, activo_id, clave_asignada, fecha_vencimiento]
     );
     return result.insertId;
   },
 
-  // 🆕 Verificar si un usuario YA tiene asignada esa licencia activa
+  // Verificar duplicado activo
   findDuplicate: async (usuario_id, activo_id, connection = db) => {
     const [rows] = await connection.execute(
       `SELECT id FROM asignaciones 
@@ -19,10 +20,10 @@ export const AssignmentModel = {
        LIMIT 1`,
       [usuario_id, activo_id]
     );
-    return rows[0]; // undefined si no existe, objeto si ya tiene la licencia
+    return rows[0];
   },
 
-  // 🆕 Vencer TODAS las licencias activas de un usuario al dar de baja
+  // Vencer todas las licencias activas de un usuario al dar de baja
   expireByUser: async (usuario_id, connection = db) => {
     const [result] = await connection.execute(
       `UPDATE asignaciones 
@@ -30,7 +31,7 @@ export const AssignmentModel = {
        WHERE usuario_id = ? AND estado = 'Activa'`,
       [usuario_id]
     );
-    return result.affectedRows; // cuántas licencias se vencieron
+    return result.affectedRows;
   },
 
 };
