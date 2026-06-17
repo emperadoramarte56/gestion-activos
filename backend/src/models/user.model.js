@@ -26,14 +26,21 @@ export const UserModel = {
 
     // Obtener las licencias y activos que tiene un usuario específico actualmente
     findAssignments: async (userId) => {
-        const [rows] = await db.execute(
-            `SELECT a.id as asignacion_id, ac.nombre as activo_nombre, ac.tipo, a.clave_asignada, a.fecha_asignacion 
-             FROM asignaciones a
-             JOIN activos ac ON a.activo_id = ac.id
-             WHERE a.usuario_id = ?`, 
-            [userId]
-        );
-        return rows;
+    const [rows] = await db.execute(
+        `SELECT 
+        a.id as asignacion_id, 
+        ac.nombre as activo_nombre, 
+        ac.tipo, 
+        a.clave_asignada, 
+        a.fecha_asignacion,
+        a.fecha_vencimiento,  -- 🆕
+        a.estado              -- 🆕
+        FROM asignaciones a
+        JOIN activos ac ON a.activo_id = ac.id
+        WHERE a.usuario_id = ? AND a.estado = 'Activa'`,
+        [userId]
+    );
+    return rows;
     },
 
     // Dar de baja el rol del usuario (Simulación de desactivación / eliminación lógica)
